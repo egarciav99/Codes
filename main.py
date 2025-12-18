@@ -10,30 +10,28 @@ def home():
 
 @app.post("/extract")
 async def extract_text(file: UploadFile = File(...)):
-    """
-    Este endpoint recibe el binario desde n8n. 
-    El nombre 'file' es el que debes poner en la columna 'Name' de n8n.
-    """
     try:
-        # 1. Leer el contenido binario del archivo
+        # 1. Leer el contenido binario
         pdf_content = await file.read()
         
-        # 2. Abrir el PDF desde la memoria (stream)
+        # 2. Abrir el PDF
         doc = fitz.open(stream=pdf_content, filetype="pdf")
         
+        # 3. Extraer metadatos ANTES de cerrar
         text_output = ""
+        total_paginas = len(doc) # Guardamos el número de páginas aquí
         
-        # 3. Recorrer las páginas y extraer texto
         for page in doc:
             text_output += page.get_text()
             
+        # 4. Ahora sí podemos cerrar el documento
         doc.close()
         
-        # 4. Devolver el JSON a n8n
+        # 5. Devolver la respuesta
         return {
             "archivo": file.filename,
             "texto": text_output,
-            "total_paginas": len(doc)
+            "total_paginas": total_paginas # Usamos la variable guardada
         }
         
     except Exception as e:
