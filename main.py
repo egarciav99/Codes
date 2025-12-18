@@ -9,7 +9,7 @@ def home():
     return {"status": "online", "message": "PDF Text Extractor API"}
 
 @app.post("/extract")
-async def extract_text(file: UploadFile = File(...)):
+async def extract_text(file: UploadFile = File(Sube_un_pdf)):
     # Validar que sea un PDF
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="El archivo debe ser un PDF")
