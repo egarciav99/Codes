@@ -6,35 +6,38 @@ app = FastAPI()
 
 @app.get("/")
 def home():
-    return {"status": "online", "message": "PDF Text Extractor API"}
+    return {"status": "online", "message": "API de extracción lista"}
 
 @app.post("/extract")
-async def extract_text(file: UploadFile = File(Sube_un_pdf)):
-    # Validar que sea un PDF
-    if not file.filename.endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="El archivo debe ser un PDF")
-
+async def extract_text(file: UploadFile = File(...)):
+    """
+    Este endpoint recibe el binario desde n8n. 
+    El nombre 'file' es el que debes poner en la columna 'Name' de n8n.
+    """
     try:
-        # Leer el contenido del archivo subido
+        # 1. Leer el contenido binario del archivo
         pdf_content = await file.read()
         
-        # Abrir el PDF desde la memoria
+        # 2. Abrir el PDF desde la memoria (stream)
         doc = fitz.open(stream=pdf_content, filetype="pdf")
         
-        full_text = ""
-        for page_num in range(len(doc)):
-            page = doc.load_page(page_num)
-            full_text += page.get_text()
+        text_output = ""
+        
+        # 3. Recorrer las páginas y extraer texto
+        for page in doc:
+            text_output += page.get_text()
             
         doc.close()
         
+        # 4. Devolver el JSON a n8n
         return {
-            "filename": file.filename,
-            "text": full_text,
-            "page_count": len(doc)
+            "archivo": file.filename,
+            "texto": text_output,
+            "total_paginas": len(doc)
         }
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": f"Error procesando el PDF: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
